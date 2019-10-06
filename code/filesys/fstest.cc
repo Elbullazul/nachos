@@ -1,15 +1,15 @@
-// fstest.cc 
-//	Simple test routines for the file system.  
+// fstest.cc
+//	Simple test routines for the file system.
 //
 //	We implement:
 //	   Copy -- copy a file from UNIX to Nachos
-//	   Print -- cat the contents of a Nachos file 
+//	   Print -- cat the contents of a Nachos file
 //	   Perftest -- a stress test for the Nachos file system
 //		read and write a really large file in tiny chunks
 //		(won't work on baseline system!)
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
@@ -37,13 +37,13 @@ Copy(char *from, char *to)
     char *buffer;
 
 // Open UNIX file
-    if ((fp = fopen(from, "r")) == NULL) {	 
+    if ((fp = fopen(from, "r")) == NULL) {
 	printf("Copy: couldn't open input file %s\n", from);
 	return;
     }
 
 // Figure out length of UNIX file
-    fseek(fp, 0, 2);		
+    fseek(fp, 0, 2);
     fileLength = ftell(fp);
     fseek(fp, 0, 0);
 
@@ -54,16 +54,16 @@ Copy(char *from, char *to)
 	fclose(fp);
 	return;
     }
-    
+
     openFile = fileSystem->Open(to);
-	
+
  //IFT320: Assertion a retirer lorsqu'on change le type de FileHandle.
  //   ASSERT(openFile != NULL);
-    
+
 // Copy the data in TransferSize chunks
     buffer = new char[TransferSize];
     while ((amountRead = fread(buffer, sizeof(char), TransferSize, fp)) > 0)
-	fileSystem->Write(openFile,buffer, amountRead);	
+	fileSystem->Write(openFile,buffer, amountRead);
     delete [] buffer;
 
 // Close the UNIX and the Nachos files
@@ -79,17 +79,17 @@ Copy(char *from, char *to)
 void
 Print(char *name)
 {
-    FileHandle openFile;    
+    FileHandle openFile;
     int i, amountRead;
     char *buffer;
 
 	//IFT320: a modifier lorsque FileHandle change de type
-	
+
     if ((openFile = fileSystem->Open(name)) < 0) {
 	printf("Print: unable to open file %s\n", name);
 	return;
     }
-    
+
     buffer = new char[TransferSize];
     while ((amountRead = fileSystem->Read(openFile,buffer, TransferSize)) > 0)
 	for (i = 0; i < amountRead; i++)
@@ -117,13 +117,13 @@ Print(char *name)
 #define ContentSize 	strlen(Contents)
 #define FileSize 	((int)(ContentSize * 5000))
 
-static void 
+static void
 FileWrite()
 {
-    FileHandle openFile;    
+    FileHandle openFile;
     int i, numBytes;
 
-    printf("Sequential write of %d byte file, in %d byte chunks\n", 
+    printf("Sequential write of %d byte file, in %d byte chunks\n",
 	FileSize, ContentSize);
     if (!fileSystem->Create(FileName, 0)) {
       printf("Perf test: can't create %s\n", FileName);
@@ -145,14 +145,14 @@ FileWrite()
     fileSystem->Close(openFile);	// close the Nachos file	// close file
 }
 
-static void 
+static void
 FileRead()
 {
-    FileHandle openFile;    
+    FileHandle openFile;
     char *buffer = new char[ContentSize];
     int i, numBytes;
 
-    printf("Sequential read of %d byte file, in %d byte chunks\n", 
+    printf("Sequential read of %d byte file, in %d byte chunks\n",
 	FileSize, ContentSize);
 
     if ((openFile = fileSystem->Open(FileName)) == NULL) {
@@ -192,15 +192,15 @@ DirectoryTest()
 {
 	printf("\n\n\n-------------IFT320 DirectoryTest -----------------\n");
 	printf("Test pour les sous-repertoires\n\n\n");
-	
+
 	//Creation de repertoire
 	fileSystem->CreateDirectory("Simpsons");
 	fileSystem->List();
-	
+
 	//Changmeent de repertoire
 	fileSystem->ChangeDirectory("Simpsons");
 	fileSystem->List();
-	
+
 	//Creation de fichiers dans sous-repertoire
 	Copy("big","Homer");
 	fileSystem->List();
@@ -208,32 +208,32 @@ DirectoryTest()
 	fileSystem->List();
 	Copy("small","Maggie");
 	fileSystem->List();
-	
+
 	//Creation de repertoire dans sous-repertoire
-	fileSystem->CreateDirectory("Bart");	
-	fileSystem->List();	
+	fileSystem->CreateDirectory("Bart");
+	fileSystem->List();
 	fileSystem->ChangeDirectory("Bart");
-	fileSystem->List();	
-	
+	fileSystem->List();
+
 	//Creation de fichier dans sous-sous-repertoire
 	Copy("small","Milhouse");
 	fileSystem->List();
-	
-	//Test du lien vers le parent 
+
+	//Test du lien vers le parent
 	fileSystem->ChangeDirectory("..");
-	
+
 	//Creation de fichier apres recul et creation de repertoire
 	Copy("small","Lisa");
-	fileSystem->List();	
+	fileSystem->List();
 	fileSystem->ChangeDirectory("..");
-	fileSystem->List();	
-	
+	fileSystem->List();
+
 	//Creation d'un second sous-repertoire
 	fileSystem->CreateDirectory("Flanders");
-	fileSystem->List();	
+	fileSystem->List();
 	fileSystem->ChangeDirectory("Flanders");
 	fileSystem->List();
-	
+
 	//Creation de fichiers dans le second sous-repertoire
 	Copy("medium","Ned");
 	fileSystem->List();
@@ -243,11 +243,11 @@ DirectoryTest()
 	fileSystem->List();
 	Copy("small","Todd");
 	fileSystem->List();
-	
+
 	//Effacement de fichier dans un sous-repertoire
 	fileSystem->Remove("Maud");
 	fileSystem->List();
-	
+
 	//Effacement d'un repertoire non-vide
 	fileSystem->ChangeDirectory("..");
 	fileSystem->ChangeDirectory("Simpsons");
@@ -256,14 +256,14 @@ DirectoryTest()
 		printf("ERROR: Directory is not empty\n");
 	}
 	fileSystem->List();
-	
-	//Effacement d'un repertoire vide	
+
+	//Effacement d'un repertoire vide
 	fileSystem->ChangeDirectory("Bart");
 	fileSystem->Remove("Milhouse");
 	fileSystem->ChangeDirectory("..");
 	fileSystem->Remove("Bart");
 	fileSystem->List();
-	
+
 	//Ajout de fichiers pour les tests TabSysTest et TabPcsTest
 	fileSystem->ChangeDirectory("..");
 	fileSystem->CreateDirectory("Futurama");
@@ -289,24 +289,24 @@ DirectoryTest()
 	Copy("small","Bender");
 	Copy("small","Amy");
 	Copy("small","Hermes");
-	Copy("small","Zoidberg");	
+	Copy("small","Zoidberg");
 	fileSystem->List();
-	
+
 	printf("\n\n\n-------------Fin DirectoryTest --------------------\n\n\n\n");
 }
 
 void
 HierarTest()
 {
-	
+
 	printf("\n\n\n-----------------IFT320 HierarTest --------------------\n");
 	printf("Test exhaustif pour le systeme de fichiers hierarchique\n\n\n");
-	
-	
-	
-	
-	
-	
+
+
+
+
+
+
 	printf("\n\n\n--------------------Fin HieraTest ---------------------\n\n\n\n");
 }
 
@@ -324,48 +324,48 @@ TabSysTest()
 
 	printf("\n\n\n-----------------IFT320 TabSysTest --------------------\n");
 	printf("Test pour la table de fichiers ouverts du systeme\n\n\n");
-	
+
 	// Premier test pour la table des fichiers ouverts
-       
+
 	//  Dans le repertoire de Futurama
 	fileSystem->ChangeDirectory("Futurama");
-	
-	fileSystem->Open("Fry");	
-	fileSystem->Open("Leela");	
+
+	fileSystem->Open("Fry");
+	fileSystem->Open("Leela");
 	fileSystem->Open("Bender");
-		
+
 	//-------------------------------------------------------------------
 	// On va dans le repertoire Simpsons
     fileSystem->ChangeDirectory("..");
 	fileSystem->ChangeDirectory("Simpsons");
-	
+
 	FileHandle f4 = fileSystem->Open("Maggie");
 	//-------------------------------------------------------------------
 	// On va dans le repertoire parent de Simpsons
-    fileSystem->ChangeDirectory("..");	
+    fileSystem->ChangeDirectory("..");
 	fileSystem->Open("Cohen");
 	//-------------------------------------------------------------------
 	// On va dans le repertoire Mirror
 	fileSystem->ChangeDirectory("Mirror");
-	
+
 	fileSystem->Open("Fry");
-	
+
 	fileSystem->Open("Leela");
 
 	fileSystem->Open("Zoidberg");
-	
+
 	fileSystem->Open("Bender");
 	//-------------------------------------------------------------------
 	// On va dans le repertoire Simpsons
 	fileSystem->ChangeDirectory("..");
-	fileSystem->ChangeDirectory("Simpsons");	
-	fileSystem->Open("Lisa");	
+	fileSystem->ChangeDirectory("Simpsons");
+	fileSystem->Open("Lisa");
 	fileSystem->Open("Homer");
-	fileSystem->Open("Marge");	
-	
-	// 	 Fermeture du quatrieme fichier ouvert 
+	fileSystem->Open("Marge");
+
+	// 	 Fermeture du quatrieme fichier ouvert
 	fileSystem->Close(f4);
-	
+
 	// 	 Quelques ouvertures de plus...
 	fileSystem->ChangeDirectory("..");
 	fileSystem->ChangeDirectory("..");
@@ -373,16 +373,16 @@ TabSysTest()
 	fileSystem->ChangeDirectory("Futurama");
 	fileSystem->Open("Hermes");
 	fileSystem->Open("Amy");
-	fileSystem->ChangeDirectory("..");	
-	
+	fileSystem->ChangeDirectory("..");
+
 	//  On modifie les fichiers ouverts.
 	fileSystem->TouchOpenedFiles("NACHOS!!!");
-	
+
 	//  On ferme tous les fichiers
-	fileSystem->CloseAll();	
-	
-	
-	
+	fileSystem->CloseAll();
+
+
+
 	printf("\n\n\n------------------Fin TabSysTest ----------------------\n\n\n\n");
 }
 
@@ -397,78 +397,78 @@ TabSysTest()
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 void
 TabPcsTest1(int No)
-{	
+{
 	// Thread 1 du test #2 pour table fichiers ouverts
-   
-	//  Dans le repertoire de base 	
-	
+
+	//  Dans le repertoire de base
+
 	fileSystem->Open("Groening");
 	fileSystem->Open("Cohen");
-	
+
 	//-------------------------------------------------------------------
 	// On va dans le repertoire Simpsons
-    fileSystem->ChangeDirectory("Simpsons");	
+    fileSystem->ChangeDirectory("Simpsons");
 	fileSystem->Open("Homer");
 	fileSystem->Open("Marge");
-	fileSystem->Open("Lisa");	
+	fileSystem->Open("Lisa");
 
 	//  On modifie les fichiers ouverts.
 	fileSystem->TouchOpenedFiles("DORITOS!!!");
-	
+
 	//  On ferme tous les fichiers
-	fileSystem->CloseAll();	
+	fileSystem->CloseAll();
 }
-	
+
 void
 TabPcsTest2(int No)
-{	
+{
 	// Thread 2 du test #2 pour table fichiers ouverts
-   
-	//  Dans le repertoire de base 	
-	
-	
-	fileSystem->Open("Groening");	
+
+	//  Dans le repertoire de base
+
+
+	fileSystem->Open("Groening");
 	fileSystem->Open("Cohen");
-	
+
 	//-------------------------------------------------------------------
 	// On va dans le repertoire Futurama
-    fileSystem->ChangeDirectory("Futurama");	
+    fileSystem->ChangeDirectory("Futurama");
 	fileSystem->Open("Fry");
 	fileSystem->Open("Leela");
-	fileSystem->Open("Bender");	
-			
-	
+	fileSystem->Open("Bender");
+
+
 	//  On modifie les fichiers ouverts.
 	fileSystem->TouchOpenedFiles("CHEETOS!!!");
-	
+
 	//  On ferme tous les fichiers
-	fileSystem->CloseAll();	
+	fileSystem->CloseAll();
 }
 
 
 void
 TabPcsTest3(int No)
-{	
+{
 	// Thread 3 du test #2 pour table fichiers ouverts
-   
-	//  Dans le repertoire de base 	
-	
+
+	//  Dans le repertoire de base
+
 	fileSystem->Open("Groening");
 	fileSystem->Open("Cohen");
-	
+
 	//-------------------------------------------------------------------
 	// On va dans le repertoire Mirror
-    fileSystem->ChangeDirectory("Mirror");	
+    fileSystem->ChangeDirectory("Mirror");
 	fileSystem->Open("Fry");
 	fileSystem->Open("Leela");
-	fileSystem->Open("Bender");	
-			
-	
+	fileSystem->Open("Bender");
+
+
 	//  On modifie les fichiers ouverts.
 	fileSystem->TouchOpenedFiles("TOSTITOS!!!");
-	
+
 	//  On ferme tous les fichiers
-	fileSystem->CloseAll();	
+	fileSystem->CloseAll();
 }
 
 void
@@ -476,16 +476,16 @@ TabPcsTest()
 {
 	printf("\n\n\n-----------------IFT320 TabPcsTest --------------------\n");
 	printf("Test de table des fichiers ouverts par processus\n\n\n");
-	
-    // Programme de demarrage du test multi-thread pour 
+
+    // Programme de demarrage du test multi-thread pour
     // la table des fichiers ouverts
- 
+
     Thread *t0 = new Thread("second thread");
     t0->Fork(TabPcsTest2, 2);
     Thread *t1 = new Thread("troisieme thread");
-    t1->Fork(TabPcsTest3, 3);  
+    t1->Fork(TabPcsTest3, 3);
     TabPcsTest1(1);
-	
+
 	printf("\n\n\n-------------------Fin TabPcsTest ---------------------\n\n\n\n");
 }
 
@@ -502,13 +502,13 @@ TabPcsPrint()
 {
 	printf("\n\n\n-----------------IFT320 TabPcsPrint --------------------\n");
 	printf("Resultats des tests de table des fichiers ouverts\n\n\n");
-	
+
 	//     Impression des fichiers pour verifier les modifications
 	printf("\n--------------Groening-----------------\n\n");
 	Print("Groening");
 	printf("\n--------------Cohen-----------------\n\n");
 	Print("Cohen");
-	
+
 	fileSystem->ChangeDirectory("Simpsons");
 	printf("\n--------------Homer-----------------\n\n");
 	Print("Homer");
@@ -519,7 +519,7 @@ TabPcsPrint()
 	printf("\n--------------Maggie-----------------\n\n");
 	Print("Maggie");
 	fileSystem->ChangeDirectory("..");
-	fileSystem->ChangeDirectory("Futurama");	
+	fileSystem->ChangeDirectory("Futurama");
 	printf("\n--------------Fry-----------------\n\n");
 	Print("Fry");
 	printf("\n--------------Leela-----------------\n\n");
@@ -534,9 +534,9 @@ TabPcsPrint()
 	Print("Hermes");
 	printf("\n--------------Zoidberg-----------------\n\n");
 	Print("Zoidberg");
-	
+
 	fileSystem->ChangeDirectory("..");
-	fileSystem->ChangeDirectory("Mirror");	
+	fileSystem->ChangeDirectory("Mirror");
 	printf("\n--------------Fry2-----------------\n\n");
 	Print("Fry");
 	printf("\n--------------Leela2-----------------\n\n");
@@ -551,7 +551,6 @@ TabPcsPrint()
 	Print("Hermes");
 	printf("\n--------------Zoidberg2-----------------\n\n");
 	Print("Zoidberg");
-	
-	printf("\n\n\n-------------------Fin TabPcsPrint ---------------------\n\n\n\n");	
-}
 
+	printf("\n\n\n-------------------Fin TabPcsPrint ---------------------\n\n\n\n");
+}

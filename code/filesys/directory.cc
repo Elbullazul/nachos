@@ -1,4 +1,4 @@
-// directory.cc 
+// directory.cc
 //	Routines to manage a directory of file names.
 //
 //	The directory is a table of fixed length entries; each
@@ -17,17 +17,13 @@
 //	Fixing this is one of the parts to the assignment.
 //
 // Copyright (c) 1992-1993 The Regents of the University of California.
-// All rights reserved.  See copyright.h for copyright notice and limitation 
+// All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
 #include "utility.h"
 #include "filehdr.h"
 #include "directory.h"
-
-
-
-
 //----------------------------------------------------------------------
 // Directory::Directory
 // 	Initialize a directory; initially, the directory is completely
@@ -40,10 +36,44 @@
 
 Directory::Directory(int size)
 {
-    table = new DirectoryEntry[size];
-    tableSize = size;
-    for (int i = 0; i < tableSize; i++)
-	table[i].inUse = FALSE;
+  table = new DirectoryEntry[size];
+  tableSize = size;
+  for (int i = 0; i < tableSize; i++) {
+    table[i].inUse = FALSE;
+    table[i].isDirectory = FALSE;
+  }
+
+  // IFT320: initialize extra variables
+  name = "/";
+  parentSector = 0;
+  selfSector = 0;
+}
+
+// IFT320: Add hierarchical attributes to constructor
+Directory::Directory(int size, char *_name, int _parentSector, int _sector)
+{
+  table = new DirectoryEntry[size];
+  tableSize = size;
+  for (int i = 0; i < tableSize; i++) {
+    table[i].inUse = FALSE;
+    table[i].isDirectory = FALSE;
+  }
+
+  // Create . and .. entries
+  table[0].inUse = TRUE;
+  table[0].isDirectory = TRUE;
+  strncpy(table[0].name, ".", FileNameMaxLen);
+  table[0].sector = _sector;
+
+  table[1].inUse = TRUE;
+  table[1].isDirectory = TRUE;
+  strncpy(table[1].name, "..""", FileNameMaxLen);
+  table[1].sector = _parentSector;
+
+  // IFT320: initialize extra variables
+  name = _name;
+  parentSector = _parentSector;
+  selfSector = _sector;
 }
 
 //----------------------------------------------------------------------
@@ -52,9 +82,9 @@ Directory::Directory(int size)
 //----------------------------------------------------------------------
 
 Directory::~Directory()
-{ 
-    delete [] table;
-} 
+{
+  delete [] table;
+}
 
 //----------------------------------------------------------------------
 // Directory::FetchFrom
@@ -66,7 +96,7 @@ Directory::~Directory()
 void
 Directory::FetchFrom(OpenFile *file)
 {
-    (void) file->ReadAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
+  (void) file->ReadAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
 }
 
 //----------------------------------------------------------------------
@@ -79,7 +109,7 @@ Directory::FetchFrom(OpenFile *file)
 void
 Directory::WriteBack(OpenFile *file)
 {
-    (void) file->WriteAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
+  (void) file->WriteAt((char *)table, tableSize * sizeof(DirectoryEntry), 0);
 }
 
 //----------------------------------------------------------------------
@@ -93,16 +123,16 @@ Directory::WriteBack(OpenFile *file)
 int
 Directory::FindIndex(char *name)
 {
-    for (int i = 0; i < tableSize; i++)
-        if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
-	    return i;
-    return -1;		// name not in directory
+  for (int i = 0; i < tableSize; i++)
+  if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
+  return i;
+  return -1;		// name not in directory
 }
 
 //----------------------------------------------------------------------
 // Directory::Find
 // 	Look up file name in directory, and return the disk sector number
-//	where the file's header is stored. Return -1 if the name isn't 
+//	where the file's header is stored. Return -1 if the name isn't
 //	in the directory.
 //
 //	"name" -- the file name to look up
@@ -111,11 +141,11 @@ Directory::FindIndex(char *name)
 int
 Directory::Find(char *name)
 {
-    int i = FindIndex(name);
+  int i = FindIndex(name);
 
-    if (i != -1)
-	return table[i].sector;
-    return -1;
+  if (i != -1)
+  return table[i].sector;
+  return -1;
 }
 
 
@@ -132,53 +162,59 @@ Directory::Find(char *name)
 
 bool
 Directory::Add(char *name, int newSector)
-{ 
-    if (FindIndex(name) != -1)
-	return FALSE;
+{
+  if (FindIndex(name) != -1)
+  return FALSE;
 
-    for (int i = 0; i < tableSize; i++)
-        if (!table[i].inUse) {
-            table[i].inUse = TRUE;
-            strncpy(table[i].name, name, FileNameMaxLen); 
-            table[i].sector = newSector;			
-        return TRUE;
-	}
-    return FALSE;	// no space.  Fix when we have extensible files.
+  for (int i = 0; i < tableSize; i++)
+  if (!table[i].inUse) {
+    table[i].inUse = TRUE;
+    strncpy(table[i].name, name, FileNameMaxLen);
+    table[i].sector = newSector;
+
+    return TRUE;
+  }
+  return FALSE;	// no space.  Fix when we have extensible files.
 }
 
 
 //----------------------------------------------------------------------
 // Directory::Remove
 // 	Remove a file name from the directory.  Return TRUE if successful;
-//	return FALSE if the file isn't in the directory. 
+//	return FALSE if the file isn't in the directory.
 //
 //	"name" -- the file name to be removed
 //----------------------------------------------------------------------
 
 bool
 Directory::Remove(char *name)
-{ 
-    int i = FindIndex(name);
+{
+  int i = FindIndex(name);
 
-    if (i == -1)
-	return FALSE; 		// name not in directory
-    table[i].inUse = FALSE;
-    return TRUE;	
+  if (i == -1)
+  return FALSE; 		// name not in directory
+  table[i].inUse = FALSE;
+  return TRUE;
 }
 
 //----------------------------------------------------------------------
 // Directory::List
-// 	List all the file names in the directory. 
+// 	List all the file names in the directory.
 //----------------------------------------------------------------------
 
 void
 Directory::List()
 {
-	printf("--Directory contents--\n\n");
-	for (int i = 0; i < tableSize; i++)
-	if (table[i].inUse)
-	    printf("%s\n", table[i].name);
-	printf("\n----- End of list ----\n\n");
+  printf(selfSector + "\n");
+
+  printf("--%s contents--\n\n", name);
+  for (int i = 0; i < tableSize; i++)
+  if (table[i].inUse)
+    if (table[i].isDirectory)
+      printf("<DIR> %s\n", table[i].name);
+  else
+    printf("      %s\n", table[i].name);
+  printf("\n----- End of list ----\n\n");
 }
 
 //----------------------------------------------------------------------
@@ -189,16 +225,32 @@ Directory::List()
 
 void
 Directory::Print()
-{ 
-    FileHeader *hdr = new FileHeader;
+{
+  FileHeader *hdr = new FileHeader;
 
-    printf("Directory contents:\n");
-    for (int i = 0; i < tableSize; i++)
-	if (table[i].inUse) {
-	    printf("Name: %s, Sector: %d\n", table[i].name, table[i].sector);
-	    hdr->FetchFrom(table[i].sector);
-	    hdr->Print();
-	}
-    printf("\n");
-    delete hdr;
+  printf("%s contents:\n", name);
+  for (int i = 0; i < tableSize; i++)
+  if (table[i].inUse) {
+    printf("Name: %s, Sector: %d\n", table[i].name, table[i].sector);
+    hdr->FetchFrom(table[i].sector);
+    hdr->Print();
+  }
+  printf("\n");
+  delete hdr;
+}
+
+// IFT320: return relevant information
+int Directory::GetParentSector() {
+  return parentSector;
+}
+
+int Directory::GetSector() {
+  return selfSector;
+}
+
+void
+Directory::MarkDirectory(char *name)
+{
+  int index = FindIndex(name);
+  table[index].isDirectory = TRUE;
 }
