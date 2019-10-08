@@ -65,7 +65,7 @@ public:
   int Find(char *name);		// Find the sector number of the
   // FileHeader for file: "name"
 
-  int FindDirectory (char *name);		// Find the sector number of the
+  int FindDirectory (char *name);		// IFT320: Find the sector number of the
   // FileHeader for directory: "name"
   bool Add(char *name, int newSector);  // Add a file name into the directory
 

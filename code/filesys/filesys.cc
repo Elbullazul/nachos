@@ -83,7 +83,7 @@ FileSystem::FileSystem(bool format)
   DEBUG('f', "Initializing the file system.\n");
   if (format) {
     BitMap *freeMap = new BitMap(NumSectors);
-    Directory *directory = new Directory(NumDirEntries, "/", DirectorySector, DirectorySector);
+    Directory *directory = new Directory(NumDirEntries, "root", DirectorySector, DirectorySector);
     FileHeader *mapHdr = new FileHeader;
     FileHeader *dirHdr = new FileHeader;
 
@@ -179,11 +179,25 @@ void FileSystem::TouchOpenedFiles(char * modif){
 
 
 //IFT320: Fonction de changement de repertoire. Doit etre implementee pour la partie A.
-bool FileSystem::ChangeDirectory(char* name){
+bool FileSystem::ChangeDirectory(char* name)
+{
 
   //IFT320: Partie A
-  printf("!!ChangeDirectory non implemente!!\n");
-  ASSERT(FALSE);
+  Directory *directory = new Directory(NumDirEntries);
+  directory->FetchFrom(directoryFile);
+
+  //How do we do it?
+  int sector;
+
+  DEBUG('f', "Opening directory file %s\n", name);
+
+  sector = directory->FindDirectory(name);
+
+  if (sector >= 0) {
+    directoryFile = new OpenFile(sector);	// name was found in directory
+  } else {
+    printf("Could not access %s\n", name);
+  }
 }
 
 

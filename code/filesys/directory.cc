@@ -44,7 +44,7 @@ Directory::Directory(int size)
   }
 
   // IFT320: initialize extra variables
-  name = "/";
+  name = "root";
   parentSector = 0;
   selfSector = 0;
 }
@@ -205,8 +205,6 @@ Directory::Remove(char *name)
 void
 Directory::List()
 {
-  printf(selfSector + "\n");
-
   printf("--%s contents--\n\n", name);
   for (int i = 0; i < tableSize; i++)
   if (table[i].inUse)
@@ -253,4 +251,16 @@ Directory::MarkDirectory(char *name)
 {
   int index = FindIndex(name);
   table[index].isDirectory = TRUE;
+}
+
+int
+Directory::FindDirectory(char *name)
+{
+  int i = FindIndex(name);
+
+  if (i != -1)
+    if (table[i].isDirectory)
+      return table[i].sector;
+
+  return -1;
 }
