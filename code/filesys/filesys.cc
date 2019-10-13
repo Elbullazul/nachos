@@ -126,6 +126,10 @@ FileSystem::FileSystem(bool format)
     freeMap->WriteBack(freeMapFile);	 // flush changes to disk
     directory->WriteBack(directoryFile);
 
+    // IFT320 file table
+    tableSize = 10;
+    table = new FileHandle[tableSize];
+
     if (DebugIsEnabled('f')) {
       freeMap->Print();
       directory->Print();
@@ -143,8 +147,6 @@ FileSystem::FileSystem(bool format)
   }
 }
 
-//IFT320
-
 int FileSystem::Read(FileHandle file, char *into, int numBytes) {
   return file->Read(into,numBytes);
 }
@@ -161,27 +163,39 @@ int FileSystem::WriteAt(FileHandle file, char *from, int numBytes,int position) 
   return file->WriteAt(from,numBytes,position);
 }
 
-
+// IFT320: file table
 void FileSystem::Close (FileHandle file){
+  for (int i = 0; i < tableSize; i++) {
+    if (file == table[i]) {
+      table[i] = NULL;
+      delete file;
+
+      return;
+    }
+  }
+
+  // if we get here, there's an error
+  printf("There was an error\n");
   delete file;
 }
+//IFT320: Partie B
 void FileSystem::CloseAll(){
-  //IFT320: Partie B
-  printf("!!CloseAll non implemente!!\n");
-  ASSERT(FALSE);
+  for (int i = 0; i < tableSize; i++) {
+    Close(table[i]);
+  }
 }
 
+//IFT320: Partie B
 void FileSystem::TouchOpenedFiles(char * modif){
-  //IFT320: Partie B
-  printf("!!TouchOpenedFiles non implemente!!\n");
-  ASSERT(FALSE);
+  for (int i = 0; i < tableSize; i++) {
+    Write(table[i], modif, sizeof(modif));
+  }
 }
 
 
 //IFT320: Fonction de changement de repertoire. Doit etre implementee pour la partie A.
 bool FileSystem::ChangeDirectory(char* name)
 {
-
   //IFT320: Partie A
   Directory *directory = new Directory(NumDirEntries);
   directory->FetchFrom(directoryFile);

@@ -84,7 +84,6 @@ public:
 	void Close (FileHandle file){
 		delete file;
 	}
-
 };
 
 #else // FILESYS
@@ -134,6 +133,11 @@ private:
 
 	OpenFile* directoryFile;		// "Root" directory -- list of
 	// file names, represented as a file
+
+	// IFT320: file table
+
+	int tableSize;
+	FileHandle *table;
 };
 
 
